@@ -76,6 +76,7 @@ template <> struct std::formatter<ks::Token> : std::formatter<std::string>
             }
 #undef TOKEN_TO_STRING
             assert(false);
+            std::exit(-1);
         }();
         return formatter<std::string>::format(str, ctx);
     }

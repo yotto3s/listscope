@@ -72,5 +72,6 @@ Token Lexer::get_token()
         }
     } // end identifiers
     assert(false); // unreachable
+    std::exit(-1);
 }
 } // namespace ks

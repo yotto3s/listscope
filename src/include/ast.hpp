@@ -16,10 +16,9 @@
 #pragma clang diagnostic pop
 #endif
 
-#include "environment.hpp"
-
 namespace ks
 {
+class CodeGenEnvironment;
 class ExprAST
 {
   public:
@@ -100,10 +99,11 @@ class FunctionAST
 {
     std::unique_ptr<PrototypeAST> proto;
     std::unique_ptr<ExprAST> body;
+    bool is_top_level;
 
   public:
-    FunctionAST(std::unique_ptr<PrototypeAST> _proto, std::unique_ptr<ExprAST> _body)
-        : proto(std::move(_proto)), body(std::move(_body))
+    FunctionAST(std::unique_ptr<PrototypeAST> _proto, std::unique_ptr<ExprAST> _body, bool _is_top_level = false)
+        : proto(std::move(_proto)), body(std::move(_body)), is_top_level(_is_top_level)
     {
     }
     llvm::Function* codegen(CodeGenEnvironment& env);
@@ -111,6 +111,16 @@ class FunctionAST
     std::string to_string() const
     {
         return std::format("Function(proto: {}\n body: {})", this->proto->to_string(), this->body->to_string());
+    }
+
+    bool is_top_level_expression() const
+    {
+        return this->is_top_level;
+    }
+
+    std::string_view get_name() const
+    {
+        return this->proto->get_name();
     }
 };
 } // namespace ks

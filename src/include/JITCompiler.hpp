@@ -7,7 +7,6 @@
 #pragma clang diagnostic ignored "-Weverything"
 #endif
 #include "llvm/ADT/StringRef.h"
-#include "llvm/ExecutionEngine/JITSymbol.h"
 #include "llvm/ExecutionEngine/Orc/CompileUtils.h"
 #include "llvm/ExecutionEngine/Orc/Core.h"
 #include "llvm/ExecutionEngine/Orc/ExecutionUtils.h"
@@ -69,6 +68,8 @@ class JITCompiler
     static llvm::Expected<std::unique_ptr<JITCompiler>> create()
     {
         llvm::InitializeNativeTarget();
+        llvm::InitializeNativeTargetAsmParser();
+        llvm::InitializeNativeTargetAsmPrinter();
         auto epc = llvm::orc::SelfExecutorProcessControl::Create();
         if (!epc)
         {
@@ -106,6 +107,7 @@ class JITCompiler
     {
         return this->layout;
     }
+
     llvm::orc::JITDylib& get_main_jit_dylib()
     {
         return this->main_dylib;

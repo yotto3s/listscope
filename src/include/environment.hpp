@@ -25,6 +25,9 @@
 #pragma clang diagnostic pop
 #endif
 
+#include "JITCompiler.hpp"
+#include "ast.hpp"
+
 namespace ks
 {
 class CodeGenEnvironment
@@ -41,10 +44,15 @@ class CodeGenEnvironment
     std::unique_ptr<llvm::PassInstrumentationCallbacks> pass_instrumentation_callbacks = nullptr;
     std::unique_ptr<llvm::StandardInstrumentations> standard_instrumentations = nullptr;
     std::map<std::string, llvm::Value*> named_values{};
+    std::map<std::string, std::unique_ptr<PrototypeAST>> function_prototypes{};
 
     explicit CodeGenEnvironment(llvm::DataLayout layout);
 
+    static CodeGenEnvironment predefined_operators(llvm::DataLayout layout);
+
     void initialize_module_and_managers(llvm::DataLayout layout);
+
+    llvm::orc::ResourceTrackerSP add_to_jit_compiler(JITCompiler& jit_compiler, bool resource_tracking = false);
 
     template <std::ranges::range Args> llvm::Function* gen_prototype(const std::string_view name, const Args& args)
     {
@@ -58,6 +66,10 @@ class CodeGenEnvironment
         {
             arg.setName(args[idx++]);
         }
+
+        const auto name_str = std::string(name);
+        this->function_prototypes[name_str] =
+            std::make_unique<PrototypeAST>(name_str, std::vector<std::string>(args.begin(), args.end()));
 
         return fun;
     }
@@ -104,6 +116,8 @@ class CodeGenEnvironment
         fun->eraseFromParent();
         return nullptr;
     }
+
+    llvm::Function* get_function(const std::string_view name);
 
   private:
     void register_operators();

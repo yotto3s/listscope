@@ -5,7 +5,6 @@
 #include <memory>
 #include <optional>
 #include <sstream>
-#include <variant>
 
 #include "ast.hpp"
 #include "lexer.hpp"
@@ -196,7 +195,7 @@ std::unique_ptr<FunctionAST> Parser::parse_top_level_expr()
     if (auto e = this->parse_call_expression())
     {
         auto proto = this->gen_annon_expr();
-        auto expr = std::make_unique<FunctionAST>(std::move(proto), std::move(e));
+        auto expr = std::make_unique<FunctionAST>(std::move(proto), std::move(e), true);
         std::cout << expr->to_string() << std::endl;
         return expr;
     }
@@ -215,7 +214,7 @@ std::unique_ptr<FunctionAST> Parser::parse_top_level_identifier()
     const auto name = this->current_token.str;
 
     auto proto = this->gen_annon_expr();
-    auto expr = std::make_unique<FunctionAST>(std::move(proto), std::make_unique<VariableExprAST>(name));
+    auto expr = std::make_unique<FunctionAST>(std::move(proto), std::make_unique<VariableExprAST>(name), true);
     std::cout << expr->to_string() << std::endl;
     return expr;
 }

@@ -22,6 +22,8 @@
 #pragma clang diagnostic pop
 #endif
 
+#include "environment.hpp"
+
 namespace ks
 {
 
@@ -67,7 +69,7 @@ llvm::Value* VariableExprAST::codegen(CodeGenEnvironment& env)
 
 llvm::Value* CallExprAST::codegen(CodeGenEnvironment& env)
 {
-    auto callee_fun = env.module->getFunction(this->callee);
+    auto callee_fun = env.get_function(this->callee);
     if (callee_fun == nullptr)
     {
         return LogErrorV(std::format("Unknown function `{}`", this->callee));
@@ -98,7 +100,8 @@ llvm::Function* PrototypeAST::codegen(CodeGenEnvironment& env)
 
 llvm::Function* FunctionAST::codegen(CodeGenEnvironment& env)
 {
-    return env.gen_function(this->proto->get_name(), this->proto->get_args(),
-                            [this](auto& e) { return this->body->codegen(e); });
+    const auto fun = env.gen_function(this->proto->get_name(), this->proto->get_args(),
+                                      [this](auto& e) { return this->body->codegen(e); });
+    return fun;
 }
 } // namespace ks
