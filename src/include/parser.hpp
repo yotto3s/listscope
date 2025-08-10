@@ -7,15 +7,19 @@
 #include "ast.hpp"
 #include "lexer.hpp"
 
-namespace ks {
+namespace ks
+{
 
-class Parser {
- public:
-    using ParseResult = std::variant<std::unique_ptr<PrototypeAST>,
-                                     std::unique_ptr<FunctionAST>>;
-    Parser(Lexer&& _lexer) : lexer(std::move(_lexer)) {}
+class Parser
+{
+  public:
+    using ParseResult = std::variant<std::unique_ptr<PrototypeAST>, std::unique_ptr<FunctionAST>>;
+    Parser(Lexer&& _lexer) : lexer(std::move(_lexer))
+    {
+    }
     std::optional<ParseResult> parse_top_level();
- private:
+
+  private:
     Token current_token = Token(TokenType::END_OF_FILE);
     Lexer lexer;
     std::size_t annon = 0u;
@@ -31,4 +35,4 @@ class Parser {
     std::unique_ptr<FunctionAST> parse_top_level_expr();
     std::unique_ptr<FunctionAST> parse_top_level_identifier();
 };
-}  // namespace ks
+} // namespace ks

@@ -15,13 +15,16 @@
 #pragma clang diagnostic pop
 #endif
 
-namespace ks {
+namespace ks
+{
 
-CodeGenEnvironment::CodeGenEnvironment(llvm::DataLayout layout) {
+CodeGenEnvironment::CodeGenEnvironment(llvm::DataLayout layout)
+{
     this->initialize_module_and_managers(layout);
 }
 
-void CodeGenEnvironment::initialize_module_and_managers(llvm::DataLayout layout) {
+void CodeGenEnvironment::initialize_module_and_managers(llvm::DataLayout layout)
+{
     this->context = std::make_unique<llvm::LLVMContext>();
     this->builder = std::make_unique<llvm::IRBuilder<>>(*this->context);
     this->module = std::make_unique<llvm::Module>("my cool jit", *this->context);
@@ -33,14 +36,10 @@ void CodeGenEnvironment::initialize_module_and_managers(llvm::DataLayout layout)
     this->cgscc_analysis_manager = std::make_unique<llvm::CGSCCAnalysisManager>();
     this->module_analysis_manager = std::make_unique<llvm::ModuleAnalysisManager>();
     this->pass_instrumentation_callbacks = std::make_unique<llvm::PassInstrumentationCallbacks>();
-    this->standard_instrumentations = std::make_unique<llvm::StandardInstrumentations>(
-        *this->context, true
-    );
+    this->standard_instrumentations = std::make_unique<llvm::StandardInstrumentations>(*this->context, true);
 
-    this->standard_instrumentations->registerCallbacks(
-        *this->pass_instrumentation_callbacks,
-        this->module_analysis_manager.get()
-    );
+    this->standard_instrumentations->registerCallbacks(*this->pass_instrumentation_callbacks,
+                                                       this->module_analysis_manager.get());
 
     this->function_pass_manager->addPass(llvm::InstCombinePass());
     this->function_pass_manager->addPass(llvm::ReassociatePass());
@@ -50,17 +49,14 @@ void CodeGenEnvironment::initialize_module_and_managers(llvm::DataLayout layout)
     auto pass_builder = llvm::PassBuilder();
     pass_builder.registerModuleAnalyses(*this->module_analysis_manager);
     pass_builder.registerFunctionAnalyses(*this->function_analysis_manager);
-    pass_builder.crossRegisterProxies(
-        *this->loop_analysis_manager,
-        *this->function_analysis_manager,
-        *this->cgscc_analysis_manager,
-        *this->module_analysis_manager
-    );
+    pass_builder.crossRegisterProxies(*this->loop_analysis_manager, *this->function_analysis_manager,
+                                      *this->cgscc_analysis_manager, *this->module_analysis_manager);
 
     this->register_operators();
 }
 
-void CodeGenEnvironment::register_operators() {
+void CodeGenEnvironment::register_operators()
+{
     constexpr auto args = std::array<std::string_view, 2>{"x", "y"};
     const auto add = this->gen_function("+", args, [&args](auto& env) {
         const auto lhs = env.named_values[std::string(args[0])];
@@ -94,4 +90,4 @@ void CodeGenEnvironment::register_operators() {
     });
     assert(gt);
 }
-}  // namespace ks
+} // namespace ks

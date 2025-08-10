@@ -1,7 +1,7 @@
 #pragma once
 
-#include <functional>
 #include <format>
+#include <functional>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -25,10 +25,11 @@
 #pragma clang diagnostic pop
 #endif
 
-
-namespace ks {
-class CodeGenEnvironment {
- public:
+namespace ks
+{
+class CodeGenEnvironment
+{
+  public:
     std::unique_ptr<llvm::LLVMContext> context = nullptr;
     std::unique_ptr<llvm::IRBuilder<>> builder = nullptr;
     std::unique_ptr<llvm::Module> module = nullptr;
@@ -45,40 +46,39 @@ class CodeGenEnvironment {
 
     void initialize_module_and_managers(llvm::DataLayout layout);
 
-    template<std::ranges::range Args>
-    llvm::Function* gen_prototype(const std::string_view name, const Args& args) {
+    template <std::ranges::range Args> llvm::Function* gen_prototype(const std::string_view name, const Args& args)
+    {
         const auto nargs = std::ranges::size(args);
-        const auto doubles = std::vector<llvm::Type*>(
-            nargs,
-            llvm::Type::getDoubleTy(*this->context)
-        );
+        const auto doubles = std::vector<llvm::Type*>(nargs, llvm::Type::getDoubleTy(*this->context));
         const auto ty = llvm::FunctionType::get(llvm::Type::getDoubleTy(*this->context), std::move(doubles), false);
         const auto fun = llvm::Function::Create(ty, llvm::Function::ExternalLinkage, name, this->module.get());
 
         auto idx = std::size_t(0);
-        for (auto& arg : fun->args()) {
+        for (auto& arg : fun->args())
+        {
             arg.setName(args[idx++]);
         }
 
         return fun;
     }
 
-    template<std::ranges::range Args>
-    llvm::Function* gen_function(
-        const std::string_view name,
-        const Args& args,
-        std::function<llvm::Value*(CodeGenEnvironment&)> body
-    ) {
+    template <std::ranges::range Args>
+    llvm::Function* gen_function(const std::string_view name, const Args& args,
+                                 std::function<llvm::Value*(CodeGenEnvironment&)> body)
+    {
         auto fun = this->module->getFunction(name);
-        if (fun == nullptr) {
+        if (fun == nullptr)
+        {
             fun = this->gen_prototype(name, args);
         }
 
-        if (fun == nullptr) {
+        if (fun == nullptr)
+        {
             return nullptr;
         }
 
-        if (!fun->empty()) {
+        if (!fun->empty())
+        {
             LogError(std::format("Function `{}` cannot be redefined.", name));
             return nullptr;
         }
@@ -87,11 +87,13 @@ class CodeGenEnvironment {
         this->builder->SetInsertPoint(bb);
 
         this->named_values.clear();
-        for (auto& arg : fun->args()) {
+        for (auto& arg : fun->args())
+        {
             this->named_values[std::string(arg.getName())] = &arg;
         }
 
-        if (auto retval = body(*this)) {
+        if (auto retval = body(*this))
+        {
             this->builder->CreateRet(retval);
             llvm::verifyFunction(*fun);
             this->function_pass_manager->run(*fun, *this->function_analysis_manager);
@@ -102,13 +104,14 @@ class CodeGenEnvironment {
         fun->eraseFromParent();
         return nullptr;
     }
- private:
+
+  private:
     void register_operators();
 
-    static llvm::Value* LogError(const std::string_view str) {
+    static llvm::Value* LogError(const std::string_view str)
+    {
         std::cerr << str;
         return nullptr;
     }
-
 };
-}  // namespace ks
+} // namespace ks

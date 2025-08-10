@@ -27,45 +27,51 @@
 #pragma clang diagnostic pop
 #endif
 
-namespace ks {
+namespace ks
+{
 
-class JITCompiler {
- private:
+class JITCompiler
+{
+  private:
     std::unique_ptr<llvm::orc::ExecutionSession> session;
     llvm::DataLayout layout;
     llvm::orc::MangleAndInterner mangle;
     llvm::orc::RTDyldObjectLinkingLayer object_layer;
     llvm::orc::IRCompileLayer compile_layer;
     llvm::orc::JITDylib& main_dylib;
- public:
- JITCompiler(std::unique_ptr<llvm::orc::ExecutionSession> _session,
-             llvm::orc::JITTargetMachineBuilder builder,
-             llvm::DataLayout _layout) :
-    session(std::move(_session)), layout(std::move(_layout)), mangle(*this->session, this->layout),
-    object_layer(*this->session, []() { return std::make_unique<llvm::SectionMemoryManager>(); }),
-    compile_layer(*this->session, this->object_layer, std::make_unique<llvm::orc::ConcurrentIRCompiler>(std::move(builder))),
-    main_dylib(this->session->createBareJITDylib("<main>")) {
-        this->main_dylib.addGenerator(
-            llvm::cantFail(llvm::orc::DynamicLibrarySearchGenerator::GetForCurrentProcess(
-                this->layout.getGlobalPrefix()
-            ))
-        );
-        if (builder.getTargetTriple().isOSBinFormatCOFF()) {
+
+  public:
+    JITCompiler(std::unique_ptr<llvm::orc::ExecutionSession> _session, llvm::orc::JITTargetMachineBuilder builder,
+                llvm::DataLayout _layout)
+        : session(std::move(_session)), layout(std::move(_layout)), mangle(*this->session, this->layout),
+          object_layer(*this->session, []() { return std::make_unique<llvm::SectionMemoryManager>(); }),
+          compile_layer(*this->session, this->object_layer,
+                        std::make_unique<llvm::orc::ConcurrentIRCompiler>(std::move(builder))),
+          main_dylib(this->session->createBareJITDylib("<main>"))
+    {
+        this->main_dylib.addGenerator(llvm::cantFail(
+            llvm::orc::DynamicLibrarySearchGenerator::GetForCurrentProcess(this->layout.getGlobalPrefix())));
+        if (builder.getTargetTriple().isOSBinFormatCOFF())
+        {
             this->object_layer.setOverrideObjectFlagsWithResponsibilityFlags(true);
             this->object_layer.setAutoClaimResponsibilityForObjectSymbols(true);
         }
     }
 
-    ~JITCompiler() {
-        if (auto err = this->session->endSession()) {
+    ~JITCompiler()
+    {
+        if (auto err = this->session->endSession())
+        {
             this->session->reportError(std::move(err));
         }
     }
 
-    static llvm::Expected<std::unique_ptr<JITCompiler>> create() {
+    static llvm::Expected<std::unique_ptr<JITCompiler>> create()
+    {
         llvm::InitializeNativeTarget();
         auto epc = llvm::orc::SelfExecutorProcessControl::Create();
-        if (!epc) {
+        if (!epc)
+        {
             return epc.takeError();
         }
 
@@ -73,25 +79,36 @@ class JITCompiler {
         auto builder = llvm::orc::JITTargetMachineBuilder(session->getExecutorProcessControl().getTargetTriple());
 
         auto layout = builder.getDefaultDataLayoutForTarget();
-        if(!layout) {
+        if (!layout)
+        {
             return layout.takeError();
         }
         return std::make_unique<JITCompiler>(std::move(session), std::move(builder), std::move(*layout));
     }
 
-    llvm::Error add_module(llvm::orc::ThreadSafeModule module, llvm::orc::ResourceTrackerSP resource_tracker = nullptr) {
-        if (!resource_tracker) {
+    llvm::Error add_module(llvm::orc::ThreadSafeModule module, llvm::orc::ResourceTrackerSP resource_tracker = nullptr)
+    {
+        if (!resource_tracker)
+        {
             resource_tracker = this->main_dylib.getDefaultResourceTracker();
         }
 
         return this->compile_layer.add(std::move(resource_tracker), std::move(module));
     }
 
-    llvm::Expected<llvm::orc::ExecutorSymbolDef> lookup(llvm::StringRef name) {
-        return this->session->lookup({&this->main_dylib}, llvm::orc::MangleAndInterner(*this->session, this->layout)(name.str()));
+    llvm::Expected<llvm::orc::ExecutorSymbolDef> lookup(llvm::StringRef name)
+    {
+        return this->session->lookup({&this->main_dylib},
+                                     llvm::orc::MangleAndInterner(*this->session, this->layout)(name.str()));
     }
 
-    const llvm::DataLayout& get_data_layout() const { return this->layout; }
-    llvm::orc::JITDylib& get_main_jit_dylib() { return this->main_dylib; }
+    const llvm::DataLayout& get_data_layout() const
+    {
+        return this->layout;
+    }
+    llvm::orc::JITDylib& get_main_jit_dylib()
+    {
+        return this->main_dylib;
+    }
 };
-}  // namespace ks
+} // namespace ks

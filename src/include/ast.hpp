@@ -18,81 +18,99 @@
 
 #include "environment.hpp"
 
-
-namespace ks {
-class ExprAST {
- public:
+namespace ks
+{
+class ExprAST
+{
+  public:
     virtual ~ExprAST() = default;
     virtual std::string to_string() const = 0;
     virtual llvm::Value* codegen(CodeGenEnvironment& env) = 0;
 };
 
-class VariableExprAST : public ExprAST {
+class VariableExprAST : public ExprAST
+{
     std::string name;
- public:
-    VariableExprAST(const std::string& _name) : name(_name) {}
-    virtual std::string to_string() const override {
+
+  public:
+    VariableExprAST(const std::string& _name) : name(_name)
+    {
+    }
+    virtual std::string to_string() const override
+    {
         return std::format("Variable({})", this->name);
     }
     virtual llvm::Value* codegen(CodeGenEnvironment& env) override;
 };
 
-class CallExprAST : public ExprAST {
+class CallExprAST : public ExprAST
+{
     std::string callee;
     std::vector<std::unique_ptr<ExprAST>> args;
- public:
-    CallExprAST(std::string _callee,
-                std::vector<std::unique_ptr<ExprAST>> _args)
-        : callee(std::move(_callee)), args(std::move(_args)) {}
 
-    virtual std::string to_string() const override {
+  public:
+    CallExprAST(std::string _callee, std::vector<std::unique_ptr<ExprAST>> _args)
+        : callee(std::move(_callee)), args(std::move(_args))
+    {
+    }
+
+    virtual std::string to_string() const override
+    {
         auto ss = std::stringstream();
-        for (const auto& arg : this->args) {
+        for (const auto& arg : this->args)
+        {
             ss << arg->to_string() << ',';
         }
-        return std::format(
-            "CALL(fun: {}, args: [{}])", this->callee, ss.str()
-        );
+        return std::format("CALL(fun: {}, args: [{}])", this->callee, ss.str());
     }
 
     virtual llvm::Value* codegen(CodeGenEnvironment& env) override;
 };
 
-class PrototypeAST {
+class PrototypeAST
+{
     std::string name;
     std::vector<std::string> args;
- public:
-    PrototypeAST(const std::string _name, std::vector<std::string> _args)
-        : name(_name), args(std::move(_args)) {}
-    const std::string& get_name() const { return this->name; }
-    const std::vector<std::string> get_args() const { return this->args; }
+
+  public:
+    PrototypeAST(const std::string _name, std::vector<std::string> _args) : name(_name), args(std::move(_args))
+    {
+    }
+    const std::string& get_name() const
+    {
+        return this->name;
+    }
+    const std::vector<std::string> get_args() const
+    {
+        return this->args;
+    }
     llvm::Function* codegen(CodeGenEnvironment& env);
-    std::string to_string() const {
+    std::string to_string() const
+    {
         auto ss = std::stringstream();
-        for (const auto& arg : this->args) {
+        for (const auto& arg : this->args)
+        {
             ss << arg << ',';
         }
-        return std::format(
-            "Prototype(name: {}, args [{}])", this->name, ss.str()
-        );
+        return std::format("Prototype(name: {}, args [{}])", this->name, ss.str());
     }
 };
 
-class FunctionAST {
+class FunctionAST
+{
     std::unique_ptr<PrototypeAST> proto;
     std::unique_ptr<ExprAST> body;
- public:
-    FunctionAST(std::unique_ptr<PrototypeAST> _proto,
-        std::unique_ptr<ExprAST> _body)
-        : proto(std::move(_proto)), body(std::move(_body)) {}
+
+  public:
+    FunctionAST(std::unique_ptr<PrototypeAST> _proto, std::unique_ptr<ExprAST> _body)
+        : proto(std::move(_proto)), body(std::move(_body))
+    {
+    }
     llvm::Function* codegen(CodeGenEnvironment& env);
 
-    std::string to_string() const {
-        return std::format(
-            "Function(proto: {}\n body: {})",
-            this->proto->to_string(),
-            this->body->to_string()
-        );
+    std::string to_string() const
+    {
+        return std::format("Function(proto: {}\n body: {})", this->proto->to_string(), this->body->to_string());
     }
 };
-}  // namespace ks
+} // namespace ks

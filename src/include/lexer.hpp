@@ -6,9 +6,11 @@
 #include <istream>
 #include <string>
 
-namespace ks {
+namespace ks
+{
 
-enum TokenType {
+enum TokenType
+{
     END_OF_FILE,
     DEF,
     EXTERN,
@@ -17,25 +19,33 @@ enum TokenType {
     RIGHT_PAREN,
 };
 
-struct Token {
+struct Token
+{
     std::string str;
     TokenType ty;
 
-    Token(TokenType _ty, std::string _str = "") : str(_str), ty(_ty) {}
+    Token(TokenType _ty, std::string _str = "") : str(_str), ty(_ty)
+    {
+    }
 };
 
-class Lexer {
- public:
-    explicit Lexer(std::istream& _is) : is(_is) {
+class Lexer
+{
+  public:
+    explicit Lexer(std::istream& _is) : is(_is)
+    {
         this->is >> std::noskipws;
     }
     Token get_token();
- private:
+
+  private:
     std::istream& is;
     char last_char = ' ';
 
-    char getchar() {
-        if (this->is.eof()) {
+    char getchar()
+    {
+        if (this->is.eof())
+        {
             return EOF;
         }
         char c;
@@ -44,28 +54,29 @@ class Lexer {
     }
 };
 
-}  // namespace ks
+} // namespace ks
 
-template <>
-struct std::formatter<ks::Token> : std::formatter<std::string> {
-    auto format(ks::Token t, format_context& ctx) const {
-        const auto str = [t](){
-            #define TOKEN_TO_STRING(TY) \
-                case ks::TokenType::TY: return std::string(#TY);
-            switch (t.ty) {
+template <> struct std::formatter<ks::Token> : std::formatter<std::string>
+{
+    auto format(ks::Token t, format_context& ctx) const
+    {
+        const auto str = [t]() {
+#define TOKEN_TO_STRING(TY)                                                                                            \
+    case ks::TokenType::TY:                                                                                            \
+        return std::string(#TY);
+            switch (t.ty)
+            {
                 TOKEN_TO_STRING(END_OF_FILE)
                 TOKEN_TO_STRING(DEF)
                 TOKEN_TO_STRING(EXTERN)
                 TOKEN_TO_STRING(LEFT_PAREN)
                 TOKEN_TO_STRING(RIGHT_PAREN)
-                case ks::TokenType::IDENTIFIER:
-                    return std::format("IDENTIFIER({})", t.str);
+            case ks::TokenType::IDENTIFIER:
+                return std::format("IDENTIFIER({})", t.str);
             }
-            #undef TOKEN_TO_STRING
+#undef TOKEN_TO_STRING
             assert(false);
         }();
-        return formatter<std::string>::format(
-            str, ctx
-        );
+        return formatter<std::string>::format(str, ctx);
     }
 };
